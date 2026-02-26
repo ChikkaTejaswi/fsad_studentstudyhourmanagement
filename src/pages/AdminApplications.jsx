@@ -3,7 +3,11 @@ import { getApplications, updateApplicationStatus } from "../utils/storage";
 
 function formatDate(iso) {
   if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("en-IN", { month: "numeric", day: "numeric", year: "numeric" });
+  return new Date(iso).toLocaleDateString("en-IN", {
+    month: "numeric",
+    day: "numeric",
+    year: "numeric",
+  });
 }
 
 function displayStatus(s) {
@@ -36,8 +40,14 @@ function AdminApplications() {
 
   const counts = {
     pending: applications.filter((a) => (a.status || "pending") === "pending").length,
-    accepted: applications.filter((a) => (a.status || "").toLowerCase() === "accepted" || (a.status || "").toLowerCase() === "approved").length,
-    rejected: applications.filter((a) => (a.status || "").toLowerCase() === "rejected").length,
+    accepted: applications.filter(
+      (a) =>
+        (a.status || "").toLowerCase() === "accepted" ||
+        (a.status || "").toLowerCase() === "approved"
+    ).length,
+    rejected: applications.filter(
+      (a) => (a.status || "").toLowerCase() === "rejected"
+    ).length,
     all: applications.length,
   };
 
@@ -62,7 +72,15 @@ function AdminApplications() {
             className={`tab-btn ${tab === key ? "active" : ""}`}
             onClick={() => setTab(key)}
           >
-            {label} ({key === "pending" ? counts.pending : key === "accepted" ? counts.accepted : key === "rejected" ? counts.rejected : counts.all})
+            {label}(
+            {key === "pending"
+              ? counts.pending
+              : key === "accepted"
+              ? counts.accepted
+              : key === "rejected"
+              ? counts.rejected
+              : counts.all}
+            )
           </button>
         ))}
       </div>
@@ -77,10 +95,18 @@ function AdminApplications() {
                 <strong>{a.studentName}</strong>
                 <span className="app-card-job">{a.jobTitle}</span>
                 <span className="app-card-email">✉ {a.studentEmail}</span>
-                <span className="app-card-date">Applied: {formatDate(a.appliedAt)}</span>
-                <span className={`status-badge status-${displayStatus(a.status)}`}>{displayStatus(a.status)}</span>
+                <span className="app-card-date">
+                  Applied: {formatDate(a.appliedAt)}
+                </span>
+                <span className={`status-badge status-${displayStatus(a.status)}`}>
+                  {displayStatus(a.status)}
+                </span>
               </div>
-              <button type="button" className="btn-view-details" onClick={() => setDetailId(a.id)}>
+              <button
+                type="button"
+                className="btn-view-details"
+                onClick={() => setDetailId(a.id)}
+              >
                 View Details
               </button>
             </div>
@@ -90,21 +116,76 @@ function AdminApplications() {
 
       {selected && (
         <div className="modal-overlay" onClick={() => setDetailId(null)}>
-          <div className="modal-content application-detail" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="modal-content application-detail"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h3>Application Details</h3>
-            <p><strong>Name:</strong> {selected.studentName}</p>
-            <p><strong>Email:</strong> {selected.studentEmail}</p>
-            <p><strong>Job:</strong> {selected.jobTitle}</p>
-            <p><strong>Applied:</strong> {formatDate(selected.appliedAt)}</p>
-            {selected.note && <p><strong>Note:</strong> {selected.note}</p>}
-            <p><strong>Status:</strong> <span className={`status-badge status-${displayStatus(selected.status)}`}>{displayStatus(selected.status)}</span></p>
+            <p>
+              <strong>Name:</strong> {selected.studentName}
+            </p>
+            <p>
+              <strong>Age:</strong> {selected.studentAge || "—"}
+            </p>
+            <p>
+              <strong>Phone:</strong> {selected.studentPhone || "—"}
+            </p>
+            <p>
+              <strong>University:</strong> {selected.studentUniversity || "—"}
+            </p>
+            <p>
+              <strong>Email:</strong> {selected.studentEmail}
+            </p>
+            <p>
+              <strong>Job:</strong> {selected.jobTitle}
+            </p>
+            <p>
+              <strong>Applied:</strong> {formatDate(selected.appliedAt)}
+            </p>
+            {selected.note && (
+              <p>
+                <strong>Note:</strong> {selected.note}
+              </p>
+            )}
+            {selected.resume && selected.resume.dataUrl && (
+              <p>
+                <strong>Resume:</strong>{" "}
+                <a href={selected.resume.dataUrl} download={selected.resume.name}>
+                  Download resume
+                </a>
+              </p>
+            )}
+            <p>
+              <strong>Status:</strong>{" "}
+              <span className={`status-badge status-${displayStatus(selected.status)}`}>
+                {displayStatus(selected.status)}
+              </span>
+            </p>
             {(selected.status || "pending") === "pending" && (
               <div className="modal-actions">
-                <button type="button" className="btn-approve" onClick={() => handleStatus(selected.id, "accepted")}>Accept</button>
-                <button type="button" className="btn-reject" onClick={() => handleStatus(selected.id, "rejected")}>Reject</button>
+                <button
+                  type="button"
+                  className="btn-approve"
+                  onClick={() => handleStatus(selected.id, "accepted")}
+                >
+                  Accept
+                </button>
+                <button
+                  type="button"
+                  className="btn-reject"
+                  onClick={() => handleStatus(selected.id, "rejected")}
+                >
+                  Reject
+                </button>
               </div>
             )}
-            <button type="button" className="btn-close-modal" onClick={() => setDetailId(null)}>Close</button>
+            <button
+              type="button"
+              className="btn-close-modal"
+              onClick={() => setDetailId(null)}
+            >
+              Close
+            </button>
           </div>
         </div>
       )}
