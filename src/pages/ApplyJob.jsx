@@ -36,32 +36,36 @@ function ApplyJob() {
   const [note, setNote] = useState("");
   const [message, setMessage] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [hasApplied, setHasApplied] = useState(false);
   const student = getStudentUser();
 
   useEffect(() => {
-    if (!student) {
+    const s = getStudentUser();
+    if (!s || typeof s.email !== "string") {
       navigate("/login", { replace: true });
       return;
     }
-    const j = getJobById(jobId);
-    setJob(j);
-    if (!j) setMessage("Job not found.");
 
-    const profile = getStudentProfile(student.email);
+    getJobById(jobId).then(j => {
+      setJob(j);
+      if (!j) {
+        setMessage("Job not found.");
+      }
+    });
+
+    getApplicationsByStudent(s.email).then(apps => {
+      setHasApplied(apps.some((a) => String(a.jobId) === String(jobId)));
+    });
+
+    const profile = getStudentProfile(s.email);
     if (profile) {
-      setName(profile.name || student.name || "");
+      setName(profile.name || s.name || "");
       setAge(profile.age || "");
       setUniversity(profile.education || "");
     } else {
-      setName(student.name || "");
+      setName(s.name || "");
     }
-  }, [jobId, student, navigate]);
-
-  const alreadyApplied = () => {
-    if (!student) return false;
-    const apps = getApplicationsByStudent(student.email);
-    return apps.some((a) => String(a.jobId) === String(jobId));
-  };
+  }, [jobId, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -77,7 +81,7 @@ function ApplyJob() {
       setMessage("Applications for this job are closed.");
       return;
     }
-    if (alreadyApplied()) {
+    if (hasApplied) {
       setMessage("You have already applied for this job.");
       return;
     }
@@ -90,8 +94,6 @@ function ApplyJob() {
           reader.onload = () =>
             resolve({
               name: resumeFile.name,
-              type: resumeFile.type,
-              size: resumeFile.size,
               dataUrl: reader.result,
             });
           reader.onerror = reject;
@@ -102,20 +104,25 @@ function ApplyJob() {
       }
     }
 
-    saveApplication({
-      jobId: job.id,
-      jobTitle: job.title || "Job",
-      studentEmail: student.email,
-      studentName: name.trim() || student.name || student.email || "Student",
-      studentAge: age.trim(),
-      studentPhone: phone.trim(),
-      studentUniversity: university.trim(),
-      resume: resumeData,
-      note: note.trim() || undefined,
-      status: "pending",
-    });
-    setSubmitted(true);
-    setMessage("Application submitted successfully.");
+    try {
+      await saveApplication({
+        jobId: job.id,
+        jobTitle: job.title || "Job",
+        studentEmail: student.email,
+        studentName: name.trim() || student.name || student.email || "Student",
+        studentAge: age.trim(),
+        studentPhone: phone.trim(),
+        studentUniversity: university.trim(),
+        resume: resumeData ? JSON.stringify(resumeData) : null, // Resume format updated for SQL safety
+        note: note.trim() || "",
+        status: "pending",
+      });
+      setHasApplied(true);
+      setSubmitted(true);
+      setMessage("Application submitted successfully.");
+    } catch (err) {
+      setMessage("Could not save your application. Please try again.");
+    }
   };
 
   if (!student) return null;
@@ -123,13 +130,12 @@ function ApplyJob() {
   if (!job)
     return (
       <div className="container">
-        <p>{message}</p>
+        <p className="auth-error">{message}</p>
         <Link to="/jobs">Back to jobs</Link>
       </div>
     );
 
   const pastDeadline = isPastDeadline(job.deadline);
-  const applied = alreadyApplied();
 
   return (
     <div className="container">
@@ -149,7 +155,7 @@ function ApplyJob() {
           </p>
         )}
 
-        {submitted || applied ? (
+        {submitted || hasApplied ? (
           <p className="auth-message">
             {submitted
               ? "Application submitted successfully."

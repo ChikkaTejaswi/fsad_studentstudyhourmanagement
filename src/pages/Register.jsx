@@ -1,3 +1,4 @@
+import axios from "axios";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -9,7 +10,7 @@ function Register() {
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
 
-  const handleRegister = (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
     setMessage("");
 
@@ -26,27 +27,30 @@ function Register() {
       return;
     }
 
-    const users = JSON.parse(localStorage.getItem("students") || "[]");
-    if (users.some((u) => u.email.toLowerCase() === email.toLowerCase())) {
-      setMessage("An account with this email already exists.");
-      return;
-    }
+    try {
+      const response = await axios.post("http://localhost:8080/api/auth/register", {
+        name: name.trim(),
+        email: email.trim().toLowerCase(),
+        password,
+        role: "STUDENT"
+      });
 
-    users.push({
-      name: name.trim(),
-      email: email.trim().toLowerCase(),
-      password,
-    });
-    localStorage.setItem("students", JSON.stringify(users));
-    setMessage("Registration successful. You can now login.");
-    setTimeout(() => navigate("/login"), 1500);
+      setMessage("Registration successful! A confirmation email has been sent to you. You can now login.");
+      setTimeout(() => navigate("/login"), 3000);
+    } catch (err) {
+      if (err.response && err.response.data) {
+        setMessage(err.response.data || "Registration failed. Please try again.");
+      } else {
+        setMessage("Failed to connect to the backend server. Make sure it's running.");
+      }
+    }
   };
 
   const handleGoogleRegister = () => {
-    // Demo "Continue with Google" flow for first-time registration
     const email = "google.student@example.com";
     const displayName = "Google Student";
 
+    // Demo local storage for Google login simulation
     const users = JSON.parse(localStorage.getItem("students") || "[]");
     if (!users.some((u) => u.email.toLowerCase() === email.toLowerCase())) {
       users.push({

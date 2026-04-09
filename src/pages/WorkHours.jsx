@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react";
-import { getWorkHoursByStudent, getWorkHours, saveWorkHours, updateWorkHoursStatus } from "../utils/storage";
-import { getApplicationsByStudent } from "../utils/storage";
+import { getWorkHoursByStudent, getWorkHours, saveWorkHours, updateWorkHoursStatus, getApplicationsByStudent, getJobs } from "../utils/storage";
 import { useAuth } from "../context/AuthContext";
-import { getJobTitle } from "../data/jobs";
 
 function getStudentUser() {
   try {
@@ -18,21 +16,32 @@ function WorkHours() {
   const student = getStudentUser();
   const [entries, setEntries] = useState([]);
   const [allEntries, setAllEntries] = useState([]);
+  const [jobs, setJobs] = useState([]);
+  const [myApplications, setMyApplications] = useState([]);
+  
   const [selectedJobId, setSelectedJobId] = useState("");
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [hours, setHours] = useState("");
   const [message, setMessage] = useState("");
 
-  const myApplications = student ? getApplicationsByStudent(student.email) : [];
   const appliedJobIds = [...new Set(myApplications.map((a) => a.jobId))];
 
   useEffect(() => {
+    getJobs().then(setJobs);
+    
     if (admin) {
-      setAllEntries(getWorkHours());
+      getWorkHours().then(setAllEntries);
     } else if (student) {
-      setEntries(getWorkHoursByStudent(student.email));
+      getWorkHoursByStudent(student.email).then(setEntries);
+      getApplicationsByStudent(student.email).then(setMyApplications);
     }
   }, [admin, student?.email]);
+
+  const getJobTitle = (id) => {
+    if (!id) return "Job";
+    const j = jobs.find((x) => String(x.id) === String(id));
+    return j ? j.title : `Job #${id}`;
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -47,11 +56,12 @@ function WorkHours() {
       jobId: Number(selectedJobId),
       date,
       hours: h,
+    }).then(() => {
+      getWorkHoursByStudent(student.email).then(setEntries);
+      setHours("");
+      setMessage("Work hours recorded.");
+      setTimeout(() => setMessage(""), 2000);
     });
-    setEntries(getWorkHoursByStudent(student.email));
-    setHours("");
-    setMessage("Work hours recorded.");
-    setTimeout(() => setMessage(""), 2000);
   };
 
   const totalHours = entries.reduce((sum, e) => sum + (e.hours || 0), 0);
@@ -65,8 +75,9 @@ function WorkHours() {
   // Admin view: all work hours with approve/reject
   if (admin) {
     const handleStatus = (entryId, status) => {
-      updateWorkHoursStatus(entryId, status);
-      setAllEntries(getWorkHours());
+      updateWorkHoursStatus(entryId, status).then(() => {
+        getWorkHours().then(setAllEntries);
+      });
     };
     const totalByStudent = allEntries.reduce((acc, e) => {
       const email = e.studentEmail || "";
@@ -78,6 +89,7 @@ function WorkHours() {
       <div className="container">
         <h2>Track Work Hours</h2>
         <p className="page-desc">Approve or reject student work hour submissions.</p>
+        
         {allEntries.length === 0 ? (
           <p>No work hours logged yet.</p>
         ) : (

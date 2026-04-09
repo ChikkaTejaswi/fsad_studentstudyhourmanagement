@@ -1,3 +1,4 @@
+import axios from "axios";
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -20,7 +21,7 @@ function Login() {
   const [error, setError] = useState("");
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { loginAdmin } = useAuth();
+  const { setAdminData } = useAuth();
 
   useEffect(() => {
     const type = searchParams.get("type");
@@ -32,7 +33,7 @@ function Login() {
     setCaptchaInput("");
   };
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
 
@@ -46,34 +47,35 @@ function Login() {
       return;
     }
 
-    if (loginType === "admin") {
-      const result = loginAdmin(email, password);
-      if (result.success) {
-        navigate("/admin");
-        return;
-      }
-      setError(result.message || "Invalid credentials.");
-      return;
-    }
+    try {
+      const response = await axios.post("http://localhost:8080/api/auth/login", {
+        email: email.trim().toLowerCase(),
+        password
+      });
 
-    // Student login: check against registered users in localStorage
-    const users = JSON.parse(localStorage.getItem("students") || "[]");
-    const user = users.find(
-      (u) => u.email.toLowerCase() === email.toLowerCase() && u.password === password
-    );
-    if (user) {
-      sessionStorage.setItem(
-        "studentUser",
-        JSON.stringify({ email: user.email, name: user.name })
-      );
-      navigate("/student");
-      return;
+      const data = response.data;
+      sessionStorage.setItem("jwtToken", data.token);
+
+      if (data.role === "ROLE_ADMIN") {
+        setAdminData({ email: data.email, role: "admin", name: data.name });
+        navigate("/admin");
+      } else {
+        sessionStorage.setItem(
+          "studentUser",
+          JSON.stringify({ email: data.email, name: data.name })
+        );
+        navigate("/student");
+      }
+    } catch (err) {
+      if (err.response && err.response.status === 401) {
+        setError("Invalid email or password. Register first if you don't have an account.");
+      } else {
+        setError("Failed to connect to the backend server.");
+      }
     }
-    setError("Invalid email or password. Register first if you don't have an account.");
   };
 
   const handleGoogleLogin = () => {
-    // Demo "Continue with Google" flow (no real OAuth)
     const demoUser = {
       email: "google.student@example.com",
       name: "Google Student",

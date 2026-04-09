@@ -10,10 +10,12 @@ function AdminFeedback() {
   const [feedbackMessage, setFeedbackMessage] = useState("");
 
   useEffect(() => {
-    setApplications(getApplications());
+    getApplications().then(apps => {
+      setApplications(apps);
+    });
   }, []);
 
-  const selected = applications.find((a) => a.id === selectedId);
+  const selected = applications.find((a) => String(a.id) === String(selectedId));
 
   const handleSubmit = (e) => {
     e.preventDefault();

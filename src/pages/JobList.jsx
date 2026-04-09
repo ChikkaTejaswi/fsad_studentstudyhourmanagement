@@ -4,7 +4,9 @@ import JobCard from "../components/JobCard";
 
 function JobList() {
   const [jobs, setJobs] = useState([]);
-  useEffect(() => setJobs(getJobsList()), []);
+  useEffect(() => {
+    getJobsList().then(setJobs);
+  }, []);
 
   return (
     <div className="container">

@@ -11,20 +11,16 @@ function getStudentUser() {
 
 function loadStudentRecord(email) {
   try {
-    const users = JSON.parse(localStorage.getItem("students") || "[]");
-    return users.find((u) => (u.email || "").toLowerCase() === (email || "").toLowerCase()) || null;
+    const raw = localStorage.getItem("profile_" + email);
+    return raw ? JSON.parse(raw) : { email };
   } catch {
-    return null;
+    return { email };
   }
 }
 
 function saveStudentRecord(updated) {
   try {
-    const users = JSON.parse(localStorage.getItem("students") || "[]");
-    const idx = users.findIndex((u) => (u.email || "").toLowerCase() === (updated.email || "").toLowerCase());
-    if (idx === -1) return;
-    users[idx] = updated;
-    localStorage.setItem("students", JSON.stringify(users));
+    localStorage.setItem("profile_" + updated.email, JSON.stringify(updated));
   } catch {
     // ignore
   }

@@ -1,17 +1,18 @@
 import { getJobs } from "../utils/storage";
 
-export function getJobsList() {
+export async function getJobsList() {
   try {
-    return getJobs().filter((j) => (j.status || "open") === "open");
+    const list = await getJobs();
+    return list.filter((j) => (j.status || "open") === "open");
   } catch (_) {
     return [];
   }
 }
 
-export function getJobById(id) {
+export async function getJobById(id) {
   if (id === undefined || id === null) return null;
   try {
-    const list = getJobs();
+    const list = await getJobs();
     const numId = Number(id);
     if (Number.isNaN(numId)) return null;
     return list.find((j) => j.id === numId || j.id === id) || null;
@@ -20,8 +21,8 @@ export function getJobById(id) {
   }
 }
 
-export function getJobTitle(id) {
-  const j = getJobById(id);
+export async function getJobTitle(id) {
+  const j = await getJobById(id);
   return j ? (j.title || `Job #${id}`) : `Job #${id}`;
 }
 

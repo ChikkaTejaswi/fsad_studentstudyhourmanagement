@@ -19,9 +19,9 @@ function AdminDashboard() {
   const [hourEntries, setHourEntries] = useState([]);
 
   useEffect(() => {
-    setJobs(getJobs());
-    setApplications(getApplications());
-    setHourEntries(getWorkHours());
+    getJobs().then(setJobs);
+    getApplications().then(setApplications);
+    getWorkHours().then(setHourEntries);
   }, []);
 
   const openJobs = jobs.filter((j) => (j.status || "open") === "open");

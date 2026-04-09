@@ -21,7 +21,7 @@ function Feedback() {
 
   useEffect(() => {
     if (!student) return;
-    setFeedbackList(getFeedbackByStudent(student.email));
+    getFeedbackByStudent(student.email).then(setFeedbackList);
   }, [student?.email]);
 
   if (!student) return null;

@@ -27,7 +27,7 @@ function AdminApplications() {
   const [tab, setTab] = useState("pending");
   const [detailId, setDetailId] = useState(null);
 
-  const load = () => setApplications(getApplications());
+  const load = () => { getApplications().then(setApplications); };
 
   useEffect(() => {
     load();
@@ -52,9 +52,10 @@ function AdminApplications() {
   };
 
   const handleStatus = (applicationId, status) => {
-    updateApplicationStatus(applicationId, status);
-    load();
-    setDetailId(null);
+    updateApplicationStatus(applicationId, status).then(() => {
+      load();
+      setDetailId(null);
+    });
   };
 
   const selected = applications.find((a) => a.id === detailId);
@@ -147,14 +148,24 @@ function AdminApplications() {
                 <strong>Note:</strong> {selected.note}
               </p>
             )}
-            {selected.resume && selected.resume.dataUrl && (
-              <p>
-                <strong>Resume:</strong>{" "}
-                <a href={selected.resume.dataUrl} download={selected.resume.name}>
-                  Download resume
-                </a>
-              </p>
-            )}
+            {(() => {
+              let resFile = null;
+              if (selected.resume) {
+                try {
+                  resFile = typeof selected.resume === "string" ? JSON.parse(selected.resume) : selected.resume;
+                } catch {
+                  // ignore
+                }
+              }
+              return resFile && resFile.dataUrl ? (
+                <p>
+                  <strong>Resume:</strong>{" "}
+                  <a href={resFile.dataUrl} download={resFile.name}>
+                    Download resume
+                  </a>
+                </p>
+              ) : null;
+            })()}
             <p>
               <strong>Status:</strong>{" "}
               <span className={`status-badge status-${displayStatus(selected.status)}`}>

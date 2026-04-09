@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { getApplicationsByStudent } from "../utils/storage";
-import { getJobById } from "../data/jobs";
+import { getApplicationsByStudent, getJobs } from "../utils/storage";
 
 function getStudentUser() {
   try {
@@ -19,12 +18,21 @@ function formatDate(iso) {
 
 function MyApplications() {
   const [applications, setApplications] = useState([]);
+  const [jobs, setJobs] = useState([]);
   const student = getStudentUser();
 
   useEffect(() => {
+    getJobs().then(setJobs);
     if (!student) return;
-    setApplications(getApplicationsByStudent(student.email));
+    getApplicationsByStudent(student.email).then(setApplications);
   }, [student?.email]);
+
+  const getJobByIdLocally = (id) => {
+    if (id === undefined || id === null) return null;
+    const numId = Number(id);
+    if (Number.isNaN(numId)) return null;
+    return jobs.find((j) => j.id === numId || j.id === id) || null;
+  };
 
   if (!student) return null;
 
@@ -38,7 +46,7 @@ function MyApplications() {
       ) : (
         <div className="applications-list">
           {applications.map((app) => {
-            const job = getJobById(app?.jobId);
+            const job = getJobByIdLocally(app?.jobId);
             const deadlineStr = job?.deadline ? formatDate(job.deadline) : "—";
             const displayStatus = app.status === "approved" ? "accepted" : (app.status || "pending");
             const safeStatus = ["pending", "accepted", "rejected"].includes(displayStatus) ? displayStatus : "pending";

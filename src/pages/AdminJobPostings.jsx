@@ -23,7 +23,7 @@ function AdminJobPostings() {
   const [formOpen, setFormOpen] = useState(false);
   const [form, setForm] = useState({ ...emptyJob });
 
-  const load = () => setJobs(getJobs());
+  const load = () => { getJobs().then(setJobs); };
 
   useEffect(() => {
     load();
@@ -70,7 +70,7 @@ function AdminJobPostings() {
     setForm({ ...form, requirements: next.length ? next : [""] });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const reqs = form.requirements.filter((r) => r.trim());
     const payload = {
@@ -78,9 +78,9 @@ function AdminJobPostings() {
       requirements: reqs.length ? reqs : ["None"],
     };
     if (editing) {
-      updateJob(editing, { ...payload, id: editing });
+      await updateJob(editing, { ...payload, id: editing });
     } else {
-      saveJob(payload);
+      await saveJob(payload);
     }
     load();
     closeForm();

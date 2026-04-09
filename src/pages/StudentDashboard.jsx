@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { getApplicationsByStudent, getWorkHoursByStudent, getFeedbackByStudent } from "../utils/storage";
-import { getJobTitle } from "../data/jobs";
+import { getApplicationsByStudent, getWorkHoursByStudent, getFeedbackByStudent, getJobs } from "../utils/storage";
 
 function getStudentUser() {
   try {
@@ -27,13 +26,21 @@ function StudentDashboard() {
   const [applications, setApplications] = useState([]);
   const [hourEntries, setHourEntries] = useState([]);
   const [feedbackList, setFeedbackList] = useState([]);
+  const [jobs, setJobs] = useState([]);
 
   useEffect(() => {
+    getJobs().then(setJobs);
     if (!student) return;
-    setApplications(getApplicationsByStudent(student.email));
-    setHourEntries(getWorkHoursByStudent(student.email));
-    setFeedbackList(getFeedbackByStudent(student.email));
+    getApplicationsByStudent(student.email).then(setApplications);
+    getWorkHoursByStudent(student.email).then(setHourEntries);
+    getFeedbackByStudent(student.email).then(setFeedbackList);
   }, [student?.email]);
+
+  const getJobTitleLocally = (id) => {
+    if (!id) return "Job";
+    const j = jobs.find((x) => String(x.id) === String(id));
+    return j ? j.title : `Job #${id}`;
+  };
 
   const pendingApps = applications.filter((a) => (a.status || "pending") === "pending");
   const acceptedApps = applications.filter((a) => (a.status || "").toLowerCase() === "accepted" || (a.status || "").toLowerCase() === "approved");
@@ -57,7 +64,7 @@ function StudentDashboard() {
 
   return (
     <div className="student-dashboard">
-      <h1 className="dashboard-welcome">Welcome, {student.name || "Student"}!</h1>
+      <h1 className="dashboard-welcome">Welcome!</h1>
       <p className="dashboard-subtitle">Your work-study overview</p>
 
       <div className="dashboard-cards">
@@ -94,7 +101,7 @@ function StudentDashboard() {
                 const st = e.status || "pending";
                 return (
                   <li key={e.id} className="log-item">
-                    <span className="log-job">{getJobTitle(e.jobId)} / {formatDate(e.date)}</span>
+                    <span className="log-job">{getJobTitleLocally(e.jobId)} / {formatDate(e.date)}</span>
                     <span className="log-meta">
                       <span className="log-hours">{e.hours}h</span>
                       <span className={`status-badge status-${st}`}>{st}</span>

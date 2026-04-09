@@ -17,14 +17,13 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  const loginAdmin = (email, password) => {
-    if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-      const adminUser = { email, role: "admin" };
-      setAdmin(adminUser);
+  const setAdminData = (adminUser) => {
+    setAdmin(adminUser);
+    if (adminUser) {
       sessionStorage.setItem("adminAuth", JSON.stringify(adminUser));
-      return { success: true };
+    } else {
+      sessionStorage.removeItem("adminAuth");
     }
-    return { success: false, message: "Invalid admin email or password." };
   };
 
   const logoutAdmin = () => {
@@ -33,7 +32,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ admin, loginAdmin, logoutAdmin }}>
+    <AuthContext.Provider value={{ admin, setAdminData, logoutAdmin }}>
       {children}
     </AuthContext.Provider>
   );
